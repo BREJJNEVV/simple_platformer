@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 # Configuration
-PROJECT_NAME="mygame"
+PROJECT_NAME="simple_platformer"
 VERSION="1.0.0"
 DIST_DIR="dist"
 MAIN_FILE="main.go"
