@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 
 	"platformer/internal/config"
+	"platformer/internal/dialog"
 	"platformer/internal/entities"
 )
 
@@ -302,6 +303,33 @@ func DrawNPCWithCamera(screen *ebiten.Image, npc *entities.NPC, cameraX, cameraY
 
 	// Рисуем спрайт NPC на экране
 	screen.DrawImage(npcSprite, op)
+}
+
+// DrawDialogBox отрисовывает простой диалоговый бокс внизу экрана
+func DrawDialogBox(screen *ebiten.Image, dlg *dialog.Dialog) {
+	if dlg == nil || dlg.IsFinished() {
+		return
+	}
+
+	boxW := config.ScreenWidth - 40
+	boxH := 80
+	boxX := 20
+	boxY := config.ScreenHeight - boxH - 20
+
+	// Создаем полупрозрачный фон
+	boxImg := ebiten.NewImage(boxW, boxH)
+	boxImg.Fill(color.RGBA{R: 0, G: 0, B: 0, A: 160})
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(boxX), float64(boxY))
+	screen.DrawImage(boxImg, op)
+
+	// Текст внутри бокса
+	text := dlg.Current()
+	if text != "" {
+		ebitenutil.DebugPrintAt(screen, text, boxX+10, boxY+10)
+		ebitenutil.DebugPrintAt(screen, "[E] Далее", boxX+10, boxY+40)
+	}
 }
 
 // formatFloat форматирует число с плавающей точкой для вывода

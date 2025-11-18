@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"platformer/internal/config"
+	"platformer/internal/dialog"
 	"platformer/internal/entities"
 	"platformer/internal/network"
 	"platformer/internal/physics"
@@ -73,6 +74,9 @@ type Game struct {
 	// Отслеживание состояния клавиш для одноразовых нажатий
 	// Храним предыдущее состояние клавиш стрельбы
 	prevShootKeyPressed bool // Предыдущее состояние клавиши стрельбы
+	// Диалог
+	activeDialog         *dialog.Dialog
+	prevDialogKeyPressed bool
 }
 
 // NewGame создает новую игру с начальными параметрами
@@ -97,6 +101,21 @@ func NewGameWithOptions(opts Options) (*Game, error) {
 		entities.NewNPC(500, config.WorldHeight-100, 40, 40), // NPC в центре карты
 		entities.NewNPC(600, config.WorldHeight-100, 40, 40), // NPC дальше
 		entities.NewNPC(650, config.WorldHeight-100, 40, 40), // NPC еще дальше
+	}
+
+	// Присваиваем простые диалоги NPC
+	// Используем несколько строк для демонстрации
+	if len(npcs) > 0 {
+		npcs[0].SetDialog(dialog.New(
+			"Hello, I am Mike!",
+			"Nice to meet you!",
+			"What are you from?"))
+	}
+	if len(npcs) > 1 {
+		npcs[1].SetDialog(dialog.New("2У меня есть совет:", "Собирай монеты, чтобы апгрейдиться."))
+	}
+	if len(npcs) > 2 {
+		npcs[2].SetDialog(dialog.New("3Последний NPC:", "Удачи в приключениях!"))
 	}
 
 	gameInstance := &Game{
@@ -178,6 +197,21 @@ func (g *Game) Update() error {
 func (g *Game) handleInput() {
 	player := g.player
 
+	// Обработка диалогов (E для взаимодействия)
+	if g.activeDialog != nil {
+		ePressed := ebiten.IsKeyPressed(ebiten.KeyE)
+		if ePressed && !g.prevDialogKeyPressed {
+			// Продвигаем диалог
+			g.activeDialog.Next()
+			if g.activeDialog.IsFinished() {
+				g.activeDialog = nil
+			}
+		}
+		g.prevDialogKeyPressed = ePressed
+		// При активном диалоге блокируем движение игрока
+		return
+	}
+
 	// Проверяем нажатие клавиш движения влево/вправо
 	// ebiten.IsKeyPressed проверяет, нажата ли клавиша в данный момент
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
@@ -219,6 +253,27 @@ func (g *Game) handleInput() {
 
 	// Сохраняем текущее состояние клавиши для следующего кадра
 	g.prevShootKeyPressed = shootKeyPressed
+
+	// Взаимодействие с NPC: E — начать/продолжить диалог
+	ePressed := ebiten.IsKeyPressed(ebiten.KeyE)
+	if ePressed && !g.prevDialogKeyPressed {
+		// Находим ближайшего NPC по горизонтали, если он рядом — запускаем диалог
+		const interactDistance = 80.0
+		var found *entities.NPC
+		for _, npc := range g.npcs {
+			dx := (npc.X + npc.Width/2) - (player.X + config.PlayerWidth/2)
+			dy := (npc.Y + npc.Height/2) - (player.Y + config.PlayerHeight/2)
+			if math.Hypot(dx, dy) <= interactDistance {
+				found = npc
+				break
+			}
+		}
+		if found != nil && found.Dialog != nil {
+			found.Dialog.Reset()
+			g.activeDialog = found.Dialog
+		}
+	}
+	g.prevDialogKeyPressed = ePressed
 }
 
 // applyGravity применяет гравитацию к персонажу
@@ -513,6 +568,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Выводим отладочную информацию
+	// Если активен диалог — отображаем диалоговый бокс поверх сцены
+	if g.activeDialog != nil {
+		renderer.DrawDialogBox(screen, g.activeDialog)
+	}
+
 	renderer.DrawDebugInfo(screen, g.player, len(g.bullets))
 }
 

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Cross-platform build script for Go game
-# Usage: ./build.sh [clean|all|windows|linux|mac]
+# Usage: ./build.sh [clean|all|windows|linux|mac]∂
+# ./build.sh
 
 set -e  # Exit on any error
 

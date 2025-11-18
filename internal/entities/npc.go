@@ -1,5 +1,7 @@
 package entities
 
+import "platformer/internal/dialog"
+
 // NPC представляет неигрового персонажа
 type NPC struct {
 	// Позиция NPC на экране
@@ -11,6 +13,9 @@ type NPC struct {
 	// Направление взгляда NPC
 	// true = смотрит вправо, false = смотрит влево
 	FacingRight bool
+
+	// Dialog хранит опциональный диалог для NPC
+	Dialog *dialog.Dialog
 }
 
 // NewNPC создает нового NPC с заданными параметрами
@@ -22,4 +27,9 @@ func NewNPC(x, y, width, height float64) *NPC {
 		Height:      height,
 		FacingRight: true, // По умолчанию смотрит вправо
 	}
+}
+
+// SetDialog задает диалог для NPC
+func (n *NPC) SetDialog(d *dialog.Dialog) {
+	n.Dialog = d
 }
